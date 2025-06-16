@@ -86,7 +86,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                     # Adiciona um bônus se a ação for continuar na mesma direção,
                     # desde que não seja a ação STOP.
                     if action == pacman_current_direction and action != Directions.STOP:
-                        score += 7 # Bônus para incentivar o movimento em linha reta (valor ajustável)
+                        score += 20 # Bônus para incentivar o movimento em linha reta (valor ajustável)
 
                     if action == Directions.REVERSE[pacman_current_direction] and pacman_current_direction != Directions.STOP:
                         score -= 50 # Penalidade para reverter a direção (novo valor
