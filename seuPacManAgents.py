@@ -26,6 +26,13 @@ class MinimaxAgent(MultiAgentSearchAgent):
     Um agente minimax que escolhe uma ação em cada ponto de decisão examinando
     suas alternativas através de uma função de avaliação de estado.
     """
+    def __init__(self, evalFn = 'betterEvaluationFunction', depth = '3'):
+        # Chama o construtor da classe pai (MultiAgentSearchAgent)
+        super().__init__(evalFn=evalFn, depth=depth)
+        # Define a profundidade diretamente no código
+        # Você pode alterar este valor (por exemplo, para 2, 4, etc.)
+        self.depth = 3 # << AQUI você define a profundidade!
+        
     def getAction(self, gameState: GameState):
         """
         Retorna a ação minimax do gameState atual.

@@ -101,7 +101,7 @@ class MultiAgentSearchAgent(Agent):
     only partially specified, and designed to be extended.  Agent (game.py)
     is another abstract class.
     """
-    def __init__(self, evalFn = 'betterEvaluationFunction', depth = '3'): 
+    def __init__(self, evalFn = 'betterEvaluationFunction', depth = '3'): # << Garanta que 'betterEvaluationFunction' está aqui
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
