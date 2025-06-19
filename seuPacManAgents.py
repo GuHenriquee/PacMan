@@ -25,186 +25,168 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
     Um agente minimax que escolhe uma ação em cada ponto de decisão examinando
     suas alternativas através de uma função de avaliação de estado.
+
+    Parte de implementação do minimax para o pacman, que toma decisões maximizando
+    as chances de vitória com base na análise de alternativas, levando em contra múlti-
+    plos agentes
+
     """
     def __init__(self, evalFn = 'betterEvaluationFunction', depth = '3'):
-        # Chama o construtor da classe pai (MultiAgentSearchAgent)
+        # inicia o agente com a função de avaliação e profundidade máxiam de busca
         super().__init__(evalFn=evalFn, depth=depth)
-        # Define a profundidade diretamente no código
-        # Você pode alterar este valor (por exemplo, para 2, 4, etc.)
-        self.depth = 3 # << AQUI você define a profundidade!
+        self.depth = 3 # definir a profundidade de busca
         
     def getAction(self, gameState: GameState):
         """
-        Retorna a ação minimax do gameState atual.
+        executa o algoritmo minimax a partir do estado atual do jogo, retornando a 
+        melhor ação por meio do gameState atual
         """
 
         def minimax(agentIndex, depth, state):
-            # Caso Base: O jogo terminou (vitória/derrota) ou a profundidade máxima foi atingida.
-            # Nesses casos, retornamos o valor do estado atual usando a função de avaliação.
-            # O `self.evaluationFunction` será `betterEvaluationFunction` se configurado corretamente.
+
+            # Condições de parada: vitória, derrota ou profundidade máxima atingida
+            # nesses casos, o valor do estado atual retorna usando a função de avaliação
+            # o self.evaluationFunction vira betterEvaluationFunction se tudo estiver certo
             if state.isWin() or state.isLose() or depth == self.depth:
                 return self.evaluationFunction(state)
 
-            # Calcula o próximo agente a jogar e a próxima profundidade.
+            # calcula o próximo agente e a próxima profundidade
             numAgents = state.getNumAgents()
             nextAgent = (agentIndex + 1) % numAgents
             nextDepth = depth
-            # Se o próximo agente for o Pac-Man (índice 0), isso significa que
-            # todos os fantasmas jogaram e um novo "ply" começa.
+            # se o próximo agente for 0 (pacman), significa que 
+            # todos os fantasmas jogaram e um novo ply começa
             if nextAgent == self.index:
                 nextDepth += 1
 
-            # Obtém todas as ações legais disponíveis para o agente atual no estado atual.
+            # ações possíveis disponíveis para o agente atual no estado atual
             legalActions = state.getLegalActions(agentIndex)
 
-            # Se não houver ações legais (ex: encurralado), retorna a avaliação do estado atual.
+            # caso não haja ações possíveis, retorna a avaliação do estado atual
             if not legalActions:
                 return self.evaluationFunction(state)
 
-            # Lógica para o Pac-Man (Agente Maximizer - índice 0)
+            # lógica para o pacman (maximizador)
             if agentIndex == self.index:
-                max_score = -float('inf')  # Inicializa com um valor muito pequeno
-                best_action = None         # Variável para armazenar a melhor ação
+                max_score = -float('inf') 
+                best_action = None       
                 
-                # Obtém a direção atual do Pac-Man para incentivar movimento em linha reta
+                # obtem a direção atual do pacman para incentivar movimento em linha reta
                 pacman_current_direction = state.getPacmanState().getDirection()
 
-                # Itera sobre todas as ações legais possíveis para o Pac-Man
                 for action in legalActions:
-                    # Gera o próximo estado do jogo após o Pac-Man realizar a ação
+                    # gera o próximo estado do jogo após o pacman realizar a ação
                     successorState = state.generateSuccessor(agentIndex, action)
-                    # Chama minimax recursivamente para obter o score dessa ação
                     score = minimax(nextAgent, nextDepth, successorState)
 
-                    # --- Penaliza a ação STOP se houver outras opções ---
-                    # Isso desencoraja o Pac-Man a ficar parado desnecessariamente,
-                    # a menos que seja a única opção sensata ou uma vitória/derrota seja iminente.
+                    # o pacman é penalizado se ficar parado, a não ser que seja a única opção para
+                    # uma vitória ou derrota
                     if action == Directions.STOP and len(legalActions) > 1:
-                        score -= 100 # Penalidade aumentada para desencorajar mais fortemente parar
+                        score -= 100 
                     
-                    # --- NOVO: Incentiva o movimento em linha reta ---
-                    # Adiciona um bônus se a ação for continuar na mesma direção,
-                    # desde que não seja a ação STOP.
+                    # incentiva a manter a direção atual
                     if action == pacman_current_direction and action != Directions.STOP:
-                        score += 20 # Bônus para incentivar o movimento em linha reta (valor ajustável)
+                        score += 20 
 
+                    # penaliza caso mude para a direção oposta
                     if action == Directions.REVERSE[pacman_current_direction] and pacman_current_direction != Directions.STOP:
-                        score -= 50 # Penalidade para reverter a direção (novo valor
+                        score -= 50 
 
-                    # Se o score atual for maior que o max_score encontrado até agora, atualiza
+                    # escolhe a ação com o maior score
                     if score > max_score:
                         max_score = score
                         best_action = action
-                    # Se houver empate nos scores, prefere uma ação que não seja STOP ou que seja em linha reta
+                    # critérios para evitar stop e dar prioridade para a direçao atual
                     elif score == max_score:
-                        # Prioriza não ser STOP
                         if best_action == Directions.STOP and action != Directions.STOP:
                             best_action = action
-                        # Se ambos não são STOP, prioriza a linha reta
                         elif action == pacman_current_direction and best_action != pacman_current_direction:
                             best_action = action
-                
-                # No nível mais externo da recursão (profundidade 0, ou seja, a chamada inicial
-                # de getAction), retornamos a melhor ação. Nas chamadas recursivas internas,
-                # apenas retornamos o valor (score) para ser usado na minimização/maximização.
                 if depth == 0:
                     return best_action
                 else:
                     return max_score
-            # Lógica para os Fantasmas (Agentes Minimizer - índices > 0)
+            # logica para os fantasmas
             else:
-                min_score = float('inf')  # Inicializa com um valor muito grande
-
-                # Itera sobre todas as ações legais possíveis para o fantasma atual
+                min_score = float('inf')
                 for action in legalActions:
-                    # Gera o próximo estado do jogo após o fantasma realizar a ação
                     successorState = state.generateSuccessor(agentIndex, action)
-                    # Chama minimax recursivamente para obter o score dessa ação
                     score = minimax(nextAgent, nextDepth, successorState)
 
-                    # Se o score atual for menor que o min_score encontrado até agora, atualiza
                     if score < min_score:
                         min_score = score
                 
-                # Fantasmas sempre retornam o valor mínimo (pior cenário para o Pac-Man)
                 return min_score
 
-        # Chamada inicial para a função minimax. Começamos com o Pac-Man (self.index, que é 0)
-        # na profundidade 0 e o estado de jogo atual.
+        # inicia a recursao minimax
         return minimax(self.index, 0, gameState)
 
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
-    Avalia o estado atual do jogo para fornecer uma pontuação para o algoritmo Minimax.
-    Esta função considera a posição do Pac-Man, a comida, as cápsulas e o estado dos fantasmas,
-    com um foco em incentivar a vitória e evitar perigos desnecessários.
+    avaliação do estado atual do jogo, levando em consideração a posição do pacman, comida
+    capsulas e o estado dos fantasmas, retorna uma pontuaçao numerica para orientar as decisoes do
+    minimax
     """
     pos = currentGameState.getPacmanPosition()
-    score = currentGameState.getScore() # Pontuação base do jogo
+    score = currentGameState.getScore()
 
-    # --- INCENTIVO: COMIDA ---
-    foodList = currentGameState.getFood().asList() # Lista de posições de comida
-    numFood = currentGameState.getNumFood() # Quantidade de comida restante
-    
-    # Penaliza fortemente a quantidade total de comida restante.
-    # O objetivo principal é comer toda a comida, então quanto menos comida, melhor.
-    score -= numFood * 50 # Multiplicador aumentado para priorizar comer comida
+    # comida
+    foodList = currentGameState.getFood().asList()
+    numFood = currentGameState.getNumFood()
+    score -= numFood * 50
 
-    # Recompensa pela proximidade da comida mais próxima.
-    # Isso guia o Pac-Man em direção aos pellets visíveis.
+    # recomepnsa pela proximidade da comida mais próxima, guiando o pacman
+    # em direção aos pellets visíveis
     if foodList:
         minFoodDistance = float('inf')
         for foodPos in foodList:
             dist = manhattanDistance(pos, foodPos)
             if dist < minFoodDistance:
                 minFoodDistance = dist
-        score += 1000 / (minFoodDistance + 1) # Aumenta a recompensa por proximidade da comida
+        score += 1000 / (minFoodDistance + 1) # aumenta a recompensa por proximidade da comida
 
-    # --- INCENTIVO: CÁPSULAS ---
-    capsules = currentGameState.getCapsules() # Lista de posições das cápsulas
-    
-    # Recompensa significativa pela proximidade da cápsula mais próxima.
-    # Cápsulas são cruciais para inverter o jogo.
+    # capsulas
+    capsules = currentGameState.getCapsules()
     if capsules:
         minCapsuleDistance = float('inf')
+
         for capsulePos in capsules:
             dist = manhattanDistance(pos, capsulePos)
             if dist < minCapsuleDistance:
                 minCapsuleDistance = dist
-        score += 200.0 / (minCapsuleDistance + 1) # Aumentado o peso da recompensa da cápsula
+        score += 200.0 / (minCapsuleDistance + 1) # aumenta o peso da recompensa da cápsula
 
-    # --- FANTASMAS: PERIGO E OPORTUNIDADE ---
-    ghostStates = currentGameState.getGhostStates() # Estados de todos os fantasmas
+    # estado em relacao aos fantasmas
+    ghostStates = currentGameState.getGhostStates() # estados de todos os fantasmas
 
     for ghostState in ghostStates:
         ghostPos = ghostState.getPosition()
         ghostDistance = manhattanDistance(pos, ghostPos)
 
-        if ghostState.scaredTimer > 0: # Fantasma está assustado (oportunidade de comer)
-            # Recompensa muito alta para comer o fantasma assustado se estiver adjacente.
-            # Isso prioriza a captura de fantasmas.
+        if ghostState.scaredTimer > 0: # fantasma assustado = oportunidade para comer ele
             if ghostDistance <= 1:
-                score += 10000 # Bônus muito alto para priorizar comer o fantasma assustado.
-            # Caso contrário, recompensa por se aproximar de fantasmas assustados distantes.
+                score += 10000 # bônus absurdamente alto para priorizar comer o fantasma assustado
             else:
-                score += 0 / (ghostDistance + 0) # Incentivo maior para perseguir fantasmas assustados.
-        else: # Fantasma não está assustado (perigo)
-            # Penalidade muito forte se o fantasma estiver extremamente próximo (morte iminente).
+                score += 0 / (ghostDistance + 0) # incentiva a perseguir o fantasma assustado
+        else: # fantasma nao esta assustado
+
+            # penalidade muito alta se o fantasma estiver extremamente próximo
             if ghostDistance <= 1:
-                score -= 1000 # Penalidade ainda mais alta para evitar a morte.
-            # Penalidade moderada para fantasmas em um raio de perigo próximo.
-            elif ghostDistance < 5: # Aumentado o raio de perigo considerado
-                score -= 300 / (ghostDistance + 1) # Penalidade mais acentuada para proximidade.
-            # Pequena penalidade para fantasmas distantes (ainda são uma ameaça potencial a ser evitada).
+            
+                score -= 1000 # penalidade ainda mais alta para evitar morrer
+
+            # penalidade leve para fantasmas em um raio de perigo próximo
+            elif ghostDistance < 5: # aumenta consideravelmente o raio de perigo
+
+                score -= 300 / (ghostDistance + 1) # penalidade por proximidade
+            
+            # penalidade pequena para fantasmas um pouco distantes
             else:
-                score -= 200.0 / (ghostDistance + 1) # Ajustado para uma penalidade menor, mas presente.
+                score -= 200.0 / (ghostDistance + 1)
     
-    # Considerações adicionais para guiar o Pac-Man:
-    # Se houver pouca comida restante, o Pac-Man deve ser mais agressivo para terminar o jogo.
+    # se houver pouca comida restante, o pacman deve ser mais agressivo para terminar o jogo
 
 
     return score
-
-# Abreviação para betterEvaluationFunction.
 better = betterEvaluationFunction
